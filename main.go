@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"time"
 
 	"github.com/untoldwind/kube-database-creator/secrets"
@@ -28,7 +27,6 @@ func main() {
 	if err != nil {
 		klog.Fatalf("Error reading config: %s", err.Error())
 	}
-	fmt.Printf("%#v\n", config)
 
 	stopCh := signals.SetupSignalHandler()
 
@@ -69,7 +67,7 @@ func main() {
 }
 
 func init() {
-	flag.StringVar(&configFile, "config", "/run/database-creator/config.yaml", "Path to the database creator config")
+	flag.StringVar(&configFile, "config", "/run/database-creator/config.json", "Path to the database creator config")
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 }

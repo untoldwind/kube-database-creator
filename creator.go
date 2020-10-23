@@ -5,28 +5,40 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/untoldwind/kube-database-creator/secrets"
+
 	"github.com/untoldwind/kube-database-creator/platforms"
 	"k8s.io/klog/v2"
 )
 
 type Creator struct {
-	Name    string
-	plaform platforms.Platform
+	Name         string
+	plaform      platforms.Platform
+	secretsStore secrets.SecretsStore
 }
 
-func NewCreator(config ServerConfig) (*Creator, error) {
+func NewCreator(config ServerConfig, secretsStores map[string]secrets.SecretsStore) (*Creator, error) {
 	plaform, err := platforms.NewPlatform(config.URL)
 	if err != nil {
 		return nil, err
 	}
+	secretsStoreName := config.SecretsStore
+	if secretsStoreName == "" {
+		secretsStoreName = "kubernetes"
+	}
+	secretsStore, ok := secretsStores[secretsStoreName]
+	if !ok {
+		return nil, fmt.Errorf("No secrets store backend for %s", secretsStoreName)
+	}
 
 	return &Creator{
-		Name:    config.Name,
-		plaform: plaform,
+		Name:         config.Name,
+		plaform:      plaform,
+		secretsStore: secretsStore,
 	}, nil
 }
 
-func (c *Creator) HandleRequest(databaseName string) error {
+func (c *Creator) HandleRequest(requestKey string, databaseName string) error {
 	klog.Infof("Creator %s: Handle request for database %s", c.Name, databaseName)
 
 	exists, err := c.plaform.CheckExists(databaseName)
@@ -50,8 +62,11 @@ func (c *Creator) HandleRequest(databaseName string) error {
 	}
 
 	klog.Infof("Creator %s: Successfully created database %s", c.Name, databaseName)
-	fmt.Printf("%s\n", adminUsername)
-	fmt.Printf("%s\n", adminPassword)
+
+	if err := c.secretsStore.Store(requestKey, databaseName, adminUsername, adminPassword); err != nil {
+		return err
+	}
+
 	return nil
 }
 

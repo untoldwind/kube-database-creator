@@ -132,7 +132,7 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	return creator.HandleRequest(databaseName)
+	return creator.HandleRequest(key, databaseName)
 }
 
 func (c *Controller) enqueueFoo(obj interface{}) {

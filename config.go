@@ -14,8 +14,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	Name         string `json:"name"`
+	URL          string `json:"url"`
+	SecretsStore string `json:"secrets_store,omitempty"`
 }
 
 func (c *Config) GetObjectKind() schema.ObjectKind {

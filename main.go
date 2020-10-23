@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/untoldwind/kube-database-creator/secrets"
 	"github.com/untoldwind/kube-database-creator/signals"
 	apiV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -43,10 +44,15 @@ func main() {
 
 	kubeInformerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, informers.WithTweakListOptions(tweakListOptions))
 
+	secretStores, err := secrets.SecretsStores(cfg)
+	if err != nil {
+		klog.Fatalf("Error building secrets stores backend clientset: %s", err.Error())
+	}
+
 	creators := map[string]*Creator{}
 
 	for _, serverConfig := range config.Servers {
-		creator, err := NewCreator(serverConfig)
+		creator, err := NewCreator(serverConfig, secretStores)
 		if err != nil {
 			klog.Fatalf("Error initializing creator: %s", err.Error())
 		}

@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  name: example-db-request
+  labels:
+    kube-database-creator: request
+data:
+  server: primary
+  database: example1
+

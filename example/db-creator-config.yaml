@@ -1,0 +1,5 @@
+servers:
+  - name: primary
+    url: "postgres://admin1:admin1password@localhost:5432/postgres?sslmode=disable"
+  - name: secondary
+    url: "postgres://admin2:admin2password@localhost:5433/postgres?sslmode=disable"

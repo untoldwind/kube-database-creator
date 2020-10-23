@@ -1,0 +1,117 @@
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: creator-example
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: creator-example
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: library/postgres:12
+        env:
+          - name: POSTGRES_PASSWORD
+            value: "verysecretmasterpassword"
+        ports:
+          - containerPort: 5432
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: creator-example
+  name: postgres
+spec:
+  ports:
+  - protocol: TCP
+    name: postgres
+    port: 5432
+  clusterIP: None
+  selector:
+    app: postgres
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: kube-database-creator
+  namespace: creator-example
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kube-database-creator
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - list
+      - get
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - create
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kube-database-creator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-database-creator
+subjects:
+  - kind: ServiceAccount
+    name: kube-database-creator
+    namespace: creator-example
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: kube-database-creator-config
+  namespace: creator-example
+type: Opaque
+stringData:
+  config.json: >
+    {"servers": [{
+      "name": "main-database",
+      "url": "postgres://postgres:verysecretmasterpassword@postgres.creator-example.svc.cluster.local:5432/postgres?sslmode=disable"
+    }]}
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: kube-database-creator
+  namespace: creator-example
+spec:
+  serviceAccountName: kube-database-creator
+  containers:
+  - name: kube-database-creator
+    image: untoldwind/kube-database-creator
+    volumeMounts:
+      - mountPath: /run/database-creator
+        name: config
+        readOnly: true
+  volumes:
+    - name: config
+      secret:
+        secretName: kube-database-creator-config

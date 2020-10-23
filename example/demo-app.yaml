@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: creator-example
+  name: demo-app-database
+  labels:
+    kube-database-creator: request
+data:
+  server: main-database
+  database: demo_app_db
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: demo-app
+  namespace: creator-example
+spec:
+  containers:
+  - name: demo-app
+    image: library/postgres:12
+    command:
+      - "/bin/sleep"
+      - "10000"
+    env:
+      - name: "DEMO_APP_DB_NAME"
+        valueFrom:
+          secretKeyRef:
+            name: demo-app-database
+            key: database
+      - name: "DEMO_APP_DB_USER"
+        valueFrom:
+          secretKeyRef:
+            name: demo-app-database
+            key: username
+      - name: "DEMO_APP_DB_PASSWORD"
+        valueFrom:
+          secretKeyRef:
+            name: demo-app-database
+            key: password
+---
